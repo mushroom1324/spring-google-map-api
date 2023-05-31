@@ -1,54 +1,37 @@
 package com.example.meetinthemiddle;
 
-import com.google.maps.GeoApiContext;
+import com.example.meetinthemiddle.model.GeocodingResponse;
+import com.example.meetinthemiddle.service.MiddlepointSearchService;
 import com.google.maps.errors.ApiException;
-import com.google.maps.model.PlaceDetails;
-import org.junit.jupiter.api.BeforeEach;
+import com.google.maps.model.PlacesSearchResult;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Map;
 
-import static net.bytebuddy.matcher.ElementMatchers.any;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
-
+@SpringBootTest
 class MiddlepointSearchServiceTest {
 
-    @Mock
-    GeoApiContext geoApiContext;
-
-    @InjectMocks
+    @Autowired
     MiddlepointSearchService middlepointSearchService;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
 
     @Test
     void testFindSubwayStationsBetweenUsers() throws IOException, InterruptedException, ApiException {
         GeocodingResponse user1 = new GeocodingResponse();
-        user1.setLocation(new GeocodingResponse.Location(37.59200, 126.9140));  // Seoul
+        user1.setGeometry(new GeocodingResponse.Geometry(new GeocodingResponse.Location(37.59200, 126.9140)));  // 새절역
 
         GeocodingResponse user2 = new GeocodingResponse();
-        user2.setLocation(new GeocodingResponse.Location(37.54332, 126.72776));  // Tokyo
+        user2.setGeometry(new GeocodingResponse.Geometry(new GeocodingResponse.Location(37.54332, 126.72776)));  // 계산역
 
-//        List<GeocodingResponse> expectedSubwayStations = Arrays.asList(
-//                new GeocodingResponse(new GeocodingResponse.Location(36.2048, 138.2529))  // Nagano
-//        );
+        GeocodingResponse[] nearbySubwayStations = middlepointSearchService.findNearbySubwayStations(user1.getGeometry().getLocation(), user2.getGeometry().getLocation());
 
-        List<PlaceDetails> nearbySubwayStations = middlepointSearchService.findNearbySubwayStations(user1.getLocation(), user2.getLocation());
-        System.out.println("nearbySubwayStations = " + nearbySubwayStations);
+        Map<String, Long> distancesBetweenNodes = middlepointSearchService.calculateDistancesBetweenNodes(user1, user2, nearbySubwayStations);
+        for (Map.Entry<String, Long> entry : distancesBetweenNodes.entrySet()) {
+            System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+        }
 
-//        when(geoApiContext.doSomething(any())).thenReturn(expectedSubwayStations);  // adjust this to match your method call
 
-//        List<GeocodingResponse> actualSubwayStations = middlepointSearchService.findNearbySubwayStations(user1.getLocation(), user2.getLocation());
-
-//        assertEquals(expectedSubwayStations, actualSubwayStations);
     }
 }

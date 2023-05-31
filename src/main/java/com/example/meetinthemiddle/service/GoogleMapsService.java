@@ -1,5 +1,6 @@
-package com.example.meetinthemiddle;
+package com.example.meetinthemiddle.service;
 
+import com.example.meetinthemiddle.model.GeocodingResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,6 @@ public class GoogleMapsService {
     public GeocodingResponse.Location getLocation(String address) {
         String url = "https://maps.googleapis.com/maps/api/geocode/json?address=" + address + "&key=" + apiKey;
         GeocodingResponse response = restTemplate.getForObject(url, GeocodingResponse.class);
-        return response.getResults().get(0).getGeometry().getLocation();
+        return response.getGeometry().getLocation();
     }
 }
