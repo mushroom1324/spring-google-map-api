@@ -3,6 +3,7 @@ package com.example.meetinthemiddle;
 import com.example.meetinthemiddle.model.GeocodingResponse;
 import com.example.meetinthemiddle.service.MiddlepointSearchService;
 import com.google.maps.errors.ApiException;
+import com.google.maps.model.LatLng;
 import com.google.maps.model.PlacesSearchResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,9 @@ class MiddlepointSearchServiceTest {
         for (Map.Entry<String, Long> entry : distancesBetweenNodes.entrySet()) {
             System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
         }
+
+        String middlePoint = middlepointSearchService.findMiddlePoint(distancesBetweenNodes);
+        System.out.println("middlePoint = " + middlePoint);
 
 
     }

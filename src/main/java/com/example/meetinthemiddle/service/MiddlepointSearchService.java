@@ -12,13 +12,14 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.PriorityQueue;
 
 @Service
 @NoArgsConstructor
 public class MiddlepointSearchService {
     private static final int SEARCH_RADIUS_METERS = 500;  // 검색 반경 설정. 단위는 미터.
-
 
     @Value("${google.api.key}")
     private String apiKey;
@@ -66,7 +67,7 @@ public class MiddlepointSearchService {
 
         // Calculate distances between users and each subway station
         for (GeocodingResponse station : subwayStations) {
-            LatLng stationLocation = new LatLng(station.getGeometry().getLocation().getLat(), station.getGeometry().getLocation().getLng());
+                LatLng stationLocation = new LatLng(station.getGeometry().getLocation().getLat(), station.getGeometry().getLocation().getLng());
 
             Long user1ToStation = getTravelTime(user1Location, stationLocation);
             Long user2ToStation = getTravelTime(user2Location, stationLocation);
@@ -87,10 +88,6 @@ public class MiddlepointSearchService {
             }
         }
 
-        // Calculate distance between the two users
-        Long user1ToUser2 = getTravelTime(user1Location, user2Location);
-        distances.put("User1 to User2", user1ToUser2);
-
         return distances;
     }
 
@@ -106,6 +103,88 @@ public class MiddlepointSearchService {
         }
 
         return null;
+    }
+
+
+    public String findMiddlePoint(Map<String, Long> subwayStationList) {
+
+        Map<String, Map<String, Long>> adjacencyList = new HashMap<>();
+        for (Map.Entry<String, Long> entry : subwayStationList.entrySet()) {
+            String[] stations = entry.getKey().split(" to ");
+            String station1 = stations[0];
+            String station2 = stations[1];
+            Long distance = entry.getValue();
+
+            if (!adjacencyList.containsKey(station1)) {
+                adjacencyList.put(station1, new HashMap<>());
+            }
+            if (!adjacencyList.containsKey(station2)) {
+                adjacencyList.put(station2, new HashMap<>());
+            }
+
+            adjacencyList.get(station1).put(station2, distance);
+            adjacencyList.get(station2).put(station1, distance);
+        }
+
+        String start = "User1";
+        String end = "User2";
+
+        Map<String, Long> distances = new HashMap<>();
+        Map<String, String> previousNodes = new HashMap<>();
+        PriorityQueue<Node> queue = new PriorityQueue<>();
+
+        queue.add(new Node(start, 0L));
+        adjacencyList.keySet().forEach(key -> distances.put(key, Long.MAX_VALUE));
+        distances.put(start, 0L);
+
+        while (!queue.isEmpty()) {
+            Node smallestNode = queue.poll();
+            String smallestNodeName = smallestNode.name;
+            Long smallestNodeDistance = smallestNode.distance;
+
+            if (smallestNodeName.equals(end)) {
+                break;
+            }
+
+            if (smallestNodeDistance.equals(distances.get(smallestNodeName))) {
+                for (Map.Entry<String, Long> neighbor : adjacencyList.get(smallestNodeName).entrySet()) {
+                    Long newDistance = distances.get(smallestNodeName) + neighbor.getValue();
+
+                    if (newDistance < distances.get(neighbor.getKey())) {
+                        queue.add(new Node(neighbor.getKey(), newDistance));
+                        distances.put(neighbor.getKey(), newDistance);
+                        previousNodes.put(neighbor.getKey(), smallestNodeName);
+                    }
+                }
+            }
+        }
+
+        LinkedList<String> path = new LinkedList<>();
+        String current = end;
+
+        while (current != null) {
+            path.addFirst(current);
+            current = previousNodes.get(current);
+        }
+
+        String middleNode = path.get(path.size() / 2);
+
+        return middleNode;
+    }
+
+    private class Node implements Comparable<Node> {
+        String name;
+        Long distance;
+
+        Node(String name, Long distance) {
+            this.name = name;
+            this.distance = distance;
+        }
+
+        @Override
+        public int compareTo(Node other) {
+            return distance.compareTo(other.distance);
+        }
     }
 
 }
